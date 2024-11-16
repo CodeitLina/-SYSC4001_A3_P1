@@ -13,13 +13,28 @@
 
 #include<stdio.h>
 
-#define ADDR_BASE   0
-#define VECTOR_SIZE 2
-
-#define FORK_VECTOR 2
-#define EXEC_VECTOR 3
-
 int PID_count = 11;
+
+enum states {
+    NEW,
+    READY,
+    RUNNING,
+    WAITING,
+    TERMINATED,
+    NOT_ASSIGNED
+};
+std::ostream& operator<<(std::ostream& os, const enum states& s) {
+
+	std::string state_names[] = {
+                                "NEW",
+                                "READY",
+                                "RUNNING",
+                                "WAITING",
+                                "TERMINATED",
+                                "NOT_ASSIGNED"
+    };
+    return (os << state_names[s]);
+}
 
 struct memory_partition{
     unsigned int    partition_number;
@@ -37,11 +52,12 @@ struct memory_partition{
 struct PCB{
     unsigned int    PID;
     unsigned int    size;
-    unsigned int    AT;
-    unsigned int    PT;
-    unsigned int    RT;
+    unsigned int    arrival_time;
+    unsigned int    start_time;
+    unsigned int    processing_time;
+    unsigned int    remaining_time;
     int             partition_number;
-    std::string     state;
+    enum states     state;
     unsigned int    io_freq;
     unsigned int    io_duration;
 };
@@ -65,6 +81,7 @@ class SimpleLCG {
     uint32_t current;
 };
 
+//------------------------------------HELPER FUNCTIONS FOR THE SIMULATOR------------------------------
 // Following function was taken from stackoverflow; helper function for splitting strings
 std::vector<std::string> split_delim(std::string input, std::string delim) {
     std::vector<std::string> tokens;
@@ -79,6 +96,144 @@ std::vector<std::string> split_delim(std::string input, std::string delim) {
 
     return tokens;
 }
+
+std::string print_PCB(std::vector<PCB> _PCB) {
+    const int tableWidth = 54;
+
+    std::stringstream buffer;
+    
+    // Print top border
+    buffer << "+" << std::setfill('-') << std::setw(tableWidth) << "+" << std::endl;
+    
+    // Print headers
+    buffer << "|"
+              << std::setfill(' ') << std::setw(4) << "PID"
+              << std::setw(2) << "|"
+              << std::setfill(' ') << std::setw(11) << "Partition"
+              << std::setw(2) << "|"
+              << std::setfill(' ') << std::setw(5) << "Size"
+              << std::setw(2) << "|"
+              << std::setfill(' ') << std::setw(13) << "Arrival Time"
+              << std::setw(2) << "|"
+              << std::setfill(' ') << std::setw(11) << "State"
+              << std::setw(2) << "|" << std::endl;
+    
+    // Print separator
+    buffer << "+" << std::setfill('-') << std::setw(tableWidth) << "+" << std::endl;
+    
+    // Print each PCB entry
+    for (const auto& program : _PCB) {
+        buffer << "|"
+                  << std::setfill(' ') << std::setw(4) << program.PID
+                  << std::setw(2) << "|"
+                  << std::setw(11) << program.partition_number
+                  << std::setw(2) << "|"
+                  << std::setw(5) << program.size
+                  << std::setw(2) << "|"
+                  << std::setw(13) << program.arrival_time
+                  << std::setw(2) << "|"
+                  << std::setw(11) << program.state
+                  << std::setw(2) << "|" << std::endl;
+    }
+    
+    // Print bottom border
+    buffer << "+" << std::setfill('-') << std::setw(tableWidth) << "+" << std::endl;
+
+    return buffer.str();
+}
+
+std::string print_PCB(PCB _PCB) {
+    std::vector<PCB> temp;
+    temp.push_back(_PCB);
+    return print_PCB(temp);
+}
+
+std::string get_memory_header() {
+
+    const int tableWidth = 91;
+
+    std::stringstream buffer;
+    
+    // Print top border
+    buffer << "+" << std::setfill('-') << std::setw(tableWidth) << "+" << std::endl;
+    
+    // Print headers
+    buffer  << "|"
+            << std::setfill(' ') << std::setw(13) << "Time of Event"
+            << std::setw(2) << "|"
+            << std::setfill(' ') << std::setw(11) << "Memory Used"
+            << std::setw(2) << "|"
+            << std::setfill(' ') << std::setw(22) << "Partitions State"
+            << std::setw(2) << "|"
+            << std::setfill(' ') << std::setw(17) << "Total Free Memory"
+            << std::setw(2) << "|"
+            << std::setfill(' ') << std::setw(18) << "Usable Free Memory"
+            << std::setw(2) << "|" << std::endl;
+    
+    // Print separator
+    buffer << "+" << std::setfill('-') << std::setw(tableWidth) << "+" << std::endl;
+
+    return buffer.str();
+
+}
+
+std::string log_memory_status(unsigned int current_time, std::vector<PCB> job_queue) {
+
+    const int tableWidth = 91;
+
+    std::stringstream buffer;
+
+    unsigned int memory_used = 0;
+    unsigned int total_free_memory = 0;
+    unsigned int usable_free_memory = 0;
+    std::string partitions_state;
+
+    for(auto partition : memory_paritions) {
+        if(partition.occupied == -1) {
+            usable_free_memory += partition.size;
+            total_free_memory += partition.size;
+        } else {
+            for(auto job : job_queue) {
+                if(partition.occupied == job.PID) {
+                    total_free_memory += (partition.size - job.size);
+                    memory_used += job.size;
+                }
+            }
+        }
+
+        if(partition.partition_number < 6){
+            partitions_state += std::to_string(partition.occupied) + ", ";
+        } else {
+            partitions_state += std::to_string(partition.occupied);
+        }
+
+    }
+
+    buffer  << "|"
+            << std::setfill(' ') << std::setw(13) << current_time
+            << std::setw(2) << "|"
+            << std::setw(11) << memory_used
+            << std::setw(2) << "|"
+            << std::setw(22) << partitions_state
+            << std::setw(2) << "|"
+            << std::setw(17) << total_free_memory
+            << std::setw(2) << "|"
+            << std::setw(18) << usable_free_memory
+            << std::setw(2) << "|" << std::endl;
+
+    return buffer.str();
+}
+
+std::string get_memory_footer() {
+    const int tableWidth = 91;
+    std::stringstream buffer;
+
+    // Print bottom border
+    buffer << "+" << std::setfill('-') << std::setw(tableWidth) << "+" << std::endl;
+
+    return buffer.str();
+}
+//--------------------------------------------FUNCTIONS FOR THE "OS"-------------------------------------
 
 //Assign memory partition to program
 bool assign_memory(PCB &program) {
@@ -109,127 +264,140 @@ bool free_memory(PCB &program){
     return false;
 }
 
-std::string print_PCB(std::vector<PCB> _PCB) {
-    const int tableWidth = 45;
-
-    std::stringstream buffer;
-    
-    // Print top border
-    buffer << "+" << std::setfill('-') << std::setw(tableWidth) << "+" << std::endl;
-    
-    // Print headers
-    buffer << "|"
-              << std::setfill(' ') << std::setw(4) << "PID"
-              << std::setw(2) << "|"
-              << std::setfill(' ') << std::setw(11) << "Partition"
-              << std::setw(2) << "|"
-              << std::setfill(' ') << std::setw(5) << "Size"
-              << std::setw(2) << "|"
-              << std::setfill(' ') << std::setw(5) << "State"
-              << std::setw(2) << "|" << std::endl;
-    
-    // Print separator
-    buffer << "+" << std::setfill('-') << std::setw(tableWidth) << "+" << std::endl;
-    
-    // Print each PCB entry
-    for (const auto& program : _PCB) {
-        buffer << "|"
-                  << std::setfill(' ') << std::setw(4) << program.PID
-                  << std::setw(2) << "|"
-                  << std::setw(11) << program.partition_number
-                  << std::setw(2) << "|"
-                  << std::setw(5) << program.size
-                  << std::setw(2) << "|"
-                  << std::setw(5) << program.state
-                  << std::setw(2) << "|" << std::endl;
-    }
-    
-    // Print bottom border
-    buffer << "+" << std::setfill('-') << std::setw(tableWidth) << "+" << std::endl;
-
-    return buffer.str();
-}
-
-std::string system_log(std::vector<PCB> ready_queue, int current_time) {
-
-    std::stringstream buffer;
-
-    buffer << "!" << std::setfill('-') << std::setw(60) << "!" << std::endl;
-    buffer << "Save Time: " << current_time << " ms" << std::endl;
-
-    buffer << print_PCB(ready_queue);
-
-    buffer << "!" << std::setfill('-') << std::setw(60) << "!" << std::endl;
-
-    return buffer.str();
-}
-
-std::string scheduler() {
-    return "scheduler called";
-}
-
 PCB add_process(std::vector<std::string> tokens) {
     PCB process;
     process.PID = std::stoi(tokens[0]);
     process.size = std::stoi(tokens[1]);
-    process.AT = std::stoi(tokens[2]);
-    process.PT = std::stoi(tokens[3]);
-    process.RT = std::stoi(tokens[3]);
+    process.arrival_time = std::stoi(tokens[2]);
+    process.processing_time = std::stoi(tokens[3]);
+    process.remaining_time = std::stoi(tokens[3]);
     process.io_freq = std::stoi(tokens[4]);
     process.io_duration = std::stoi(tokens[5]);
     process.partition_number = -1;
-    process.state = "New";
+    process.state = NOT_ASSIGNED;
 
     return process;
 }
 
-std::tuple<std::string, std::string> run_simulation(  int _current_time, 
-                                                        std::vector<PCB> _ready_queue,
-                                                        PCB _running,
-                                                        std::string input_file_string, 
-                                                        std::vector<std::string> vectors, 
-                                                        SimpleLCG lcg
-                                                    ) {
-    std::vector<PCB> ready_queue = _ready_queue;
-    PCB running = _running;
-    int current_time = _current_time;
-    std::vector<PCB> wait_queue;
+bool all_process_terminated(std::vector<PCB> processes) {
 
-    std::ifstream input_file;
-    input_file.open(input_file_string);
-    if (!input_file.is_open()) {
-        std::cerr << "Error: Unable to open file: " << input_file_string << std::endl;
-        exit;
+    for(auto process : processes) {
+        if(process.state != TERMINATED) {
+            return false;
+        }
     }
 
-    std::string line;
-    std::vector<PCB> input_processes;
-    while(std::getline(input_file, line)) {
-        auto input_tokens = split_delim(line, ", ");
-        auto new_process = add_process(input_tokens);
-        input_processes.push_back(new_process);
-    }
+    return true;
+}
 
-    while(!ready_queue.empty() && !input_processes.empty()) {
-        size_t size_input = input_processes.size();
+std::vector<PCB> FCFS(std::vector<PCB> &list_processes, std::vector<PCB> new_processes, std::vector<PCB> ready_queue) {
+    for(const auto process : new_processes) {
+        auto ready_process = process;
+        ready_process.state = READY;
 
-        for(int i = 0; i < size_input; i++) {
-            if(input_processes[i].AT == current_time) {
-                ready_queue.push_back(input_processes[i]);
-                input_processes.erase(input_processes.begin() + i);
-                size_input = input_processes.size();
-                i = 0;
+        for(auto &process : list_processes) {
+            if(ready_process.PID == process.PID) {
+                process.state = READY;
             }
         }
-        
+
+        ready_queue.push_back(ready_process);
     }
 
-    std::cout << print_PCB(ready_queue) << std::endl;
-    std::cout << print_PCB(input_processes) << std::endl;
+    return ready_queue;
+}
 
-    input_file.close();
+std::tuple<std::string, std::string> run_simulation(std::vector<PCB> list_processes, SimpleLCG lcg) {
+    bool mem_event = false;
+    bool event = false;
 
-    return std::make_tuple("Hello", "World");
+    std::vector<PCB> ready_queue;
+    std::vector<PCB> wait_queue;
+    std::vector<PCB> job_queue;
+
+    unsigned int current_time = 0;
+    PCB running;
+
+    //Initialize an empty running process
+    running.processing_time = 0;
+    running.start_time = 0;
+
+    std::string memory_status;
+    memory_status = get_memory_header();
+    memory_status += log_memory_status(current_time, job_queue);
+
+    while(!all_process_terminated(job_queue) || job_queue.empty()) {
+        std::vector<PCB> new_processes;
+
+        for(auto &process : list_processes) {
+            if(process.arrival_time == current_time) {
+                assign_memory(process);
+                new_processes.push_back(process);
+                job_queue.push_back(process);
+                mem_event = true;
+            }
+        }
+
+        //FOR NOW; only schedule is there is a process in new state
+        if(!new_processes.empty()) {
+            ready_queue = FCFS(job_queue, new_processes, ready_queue);
+            event = true;
+        }
+
+        if(current_time >= (running.processing_time + running.start_time)) {
+            for(auto &process : job_queue) {
+                if(process.PID == running.PID) {
+                    process.state = TERMINATED;
+                }
+            }
+
+            if(ready_queue.empty()) {
+                running.remaining_time = 0;
+                running.state = TERMINATED;
+                free_memory(running);
+                mem_event = true;
+
+                running.start_time = 0;
+                running.processing_time = 0;
+            } else {
+                running.remaining_time = 0;
+                running.state = TERMINATED;
+                free_memory(running);
+                mem_event = true;
+
+                running = ready_queue.back();
+                ready_queue.pop_back();
+                running.start_time = current_time;
+                running.state = RUNNING;
+
+                for(auto &process : job_queue) {
+                    if(process.PID == running.PID) {
+                        process.state = RUNNING;
+                    }
+                }
+            }
+
+            event = true;
+        }
+
+        if(event){
+            std::cout << "At t = " << current_time << ": " << std::endl;
+            std::cout << print_PCB(job_queue) << std::endl;
+        }
+        
+        if (mem_event) {
+            memory_status += log_memory_status(current_time, job_queue);
+        }
+
+        current_time++;
+        event = false;
+        mem_event = false;
+    }
+
+    memory_status += get_memory_footer();
+    std::cout << memory_status << std::endl;
+
+    return std::make_tuple("Hello", memory_status);
 }
 
 #endif
