@@ -358,4 +358,36 @@ std::string computing_metrics(std::vector<PCB> job_list, unsigned int total_time
     return buffer.str();
 }
 
+std::string print_memory_log(unsigned int current_time) {
+    std::stringstream buffer;
+
+    buffer << "\nMEMORY STATUS @ time " << current_time << " ms\n";
+    buffer << "-----------------------------------------\n";
+
+    unsigned int total_used = 0;
+    unsigned int total_free = 0;
+    unsigned int usable_free = 0;
+
+    for (int i = 0; i < 6; i++) {
+        buffer << "Partition " << memory_paritions[i].partition_number
+               << " (" << memory_paritions[i].size << " MB): ";
+
+        if (memory_paritions[i].occupied == -1) {
+            buffer << "FREE\n";
+            total_free += memory_paritions[i].size;
+            usable_free += memory_paritions[i].size;
+        } else {
+            buffer << "USED by PID " << memory_paritions[i].occupied << "\n";
+            total_used += memory_paritions[i].size;
+        }
+    }
+
+    buffer << "\nTotal memory used: " << total_used << " MB\n";
+    buffer << "Total memory free: " << total_free << " MB\n";
+    buffer << "Usable free memory: " << usable_free << " MB\n";
+    buffer << "-----------------------------------------\n\n";
+
+    return buffer.str();
+}
+
 #endif

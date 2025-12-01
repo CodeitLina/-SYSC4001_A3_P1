@@ -5,7 +5,7 @@
  * 
  */
 
-#include"interrupts_101297993_101302793.hpp"
+#include "interrupts_101297993_101302793.hpp"
 
 void FCFS(std::vector<PCB> &ready_queue) {
     std::sort( 
@@ -170,19 +170,22 @@ std::tuple<std::string /* add std::string for bonus mark */ > run_simulation(std
             states old_state = WAITING;
             p.state = READY;
 
-            // When it returns to CPU again, we start a fresh I/O countdown
-            p.time_to_next_io = p.io_freq;
+            p.time_to_next_io = p.io_freq; // reset for next CPU burst
 
-            execution_status += print_exec_status(current_time, p.PID, old_state, READY);
+            execution_status += print_exec_status(current_time, p.PID, old_state, READY); //log the transition
 
-            ready_queue.push_back(p);
-            sync_queue(job_list, p);
+            ready_queue.push_back(p); //add to ready queue
+            sync_queue(job_list, p); //sync the job list
         }
     }
 
     
     //Close the output table
     execution_status += print_exec_footer();
+    execution_status += computing_metrics(job_list, current_time); //print metrics
+    execution_status += print_memory_log(current_time); //bonus
+
+
 
     return std::make_tuple(execution_status);
 }

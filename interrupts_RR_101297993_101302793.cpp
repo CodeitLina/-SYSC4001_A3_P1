@@ -94,19 +94,22 @@ std::tuple<std::string /* add std::string for bonus mark */ > run_simulation(std
         FCFS(ready_queue); //example of FCFS is shown here
         //we can keep it FCFS bc RR is just FCFS with time quantum no difference 
         /////////////////////////////////////////////////////////////////
+        //If there is no running process, schedule one from the ready queue
         if(running.state == NOT_ASSIGNED && !ready_queue.empty()){
             execution_status += print_exec_status(current_time, ready_queue.back().PID, READY, RUNNING);
             run_process(running, job_list, ready_queue, current_time);
             quantum_remaining = QUANTUM; //reset it if we are starting new process
+            //  Record first run time for calculations later
             if (running.first_run_time == -1) { 
                 running.first_run_time = current_time;
                 sync_queue(job_list, running);
             }
         }
-        //if the cpu is running, move the time forward and then see if it's complete or an I/O needs to happen
+        //If there is a running process, decrement its remaining time
         if (running.state == RUNNING) {
             running.remaining_time -= 1; 
             quantum_remaining -= 1;
+
             //if we finished the task
             if (running.remaining_time == 0) { 
                 execution_status += print_exec_status(current_time + 1, running.PID, RUNNING, TERMINATED);
@@ -138,6 +141,10 @@ std::tuple<std::string /* add std::string for bonus mark */ > run_simulation(std
     
     //Close the output table
     execution_status += print_exec_footer();
+    execution_status += computing_metrics(job_list, current_time); //print metrics
+    execution_status += print_memory_log(current_time); //bonus
+
+
 
     return std::make_tuple(execution_status);
 }

@@ -5,7 +5,7 @@
  * 
  */
 
-#include"interrupts_101297993_101302793.hpp"
+#include "interrupts_101297993_101302793.hpp"
 
 void FCFS(std::vector<PCB> &ready_queue) {
     std::sort( 
@@ -91,7 +91,7 @@ std::tuple<std::string /* add std::string for bonus mark */ > run_simulation(std
         FCFS(ready_queue); //example of FCFS is shown here
         /////////////////////////////////////////////////////////////////
         //If there is no running process, schedule one from the ready queue
-        //also very simialr to other algo
+        //also very simialr to RR algo (thats what I started with)
         if(running.state == NOT_ASSIGNED && !ready_queue.empty()){
             execution_status += print_exec_status(current_time, ready_queue.back().PID, READY, RUNNING);
             run_process(running, job_list, ready_queue, current_time);
@@ -106,7 +106,7 @@ std::tuple<std::string /* add std::string for bonus mark */ > run_simulation(std
         if (running.state == RUNNING) {
             running.remaining_time -= 1; 
             quantum_remaining -= 1;
-            if (running.remaining_time == 0) {  
+            if (running.remaining_time == 0) {  //if we finished the task
                 execution_status += print_exec_status(current_time + 1, running.PID, RUNNING, TERMINATED);
                 running.completion_time = current_time + 1;
                 terminate_process(running, job_list);
@@ -117,7 +117,7 @@ std::tuple<std::string /* add std::string for bonus mark */ > run_simulation(std
                 running.state = WAITING;
                 running.start_time = current_time + 1; 
                 wait_queue.push_back(running);
-                sync_queue(job_list, running);
+                sync_queue(job_list, running); 
                 idle_CPU(running);
                 //otherwise if we used up our quantum
             } else if (quantum_remaining == 0) {
@@ -129,16 +129,19 @@ std::tuple<std::string /* add std::string for bonus mark */ > run_simulation(std
                 quantum_remaining = QUANTUM; //reset quantum
             }
         }
+        //Increment the current time at the end of the loop
         current_time++;
         /////////////////////////////////////////////////////////////////
     }
     
     //Close the output table
     execution_status += print_exec_footer();
+    execution_status += computing_metrics(job_list, current_time); //print metrics 
+    execution_status += print_memory_log(current_time); //bonus
+
 
     return std::make_tuple(execution_status);
 }
-
 
 int main(int argc, char** argv) {
 

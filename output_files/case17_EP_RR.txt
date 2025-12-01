@@ -21,3 +21,24 @@
 |               330 |504 |     READY |   RUNNING |
 |               340 |504 |   RUNNING |TERMINATED |
 +------------------------------------------------+
+
+Calculations: 
+Throughput: 0.0147059
+Average Turnaround Time: 300
+Average Wait Time: 232
+Average Response Time: -19
+
+MEMORY STATUS @ time 340 ms
+-----------------------------------------
+Partition 1 (40 MB): FREE
+Partition 2 (25 MB): FREE
+Partition 3 (15 MB): FREE
+Partition 4 (10 MB): FREE
+Partition 5 (8 MB): FREE
+Partition 6 (2 MB): FREE
+
+Total memory used: 0 MB
+Total memory free: 100 MB
+Usable free memory: 100 MB
+-----------------------------------------
+
