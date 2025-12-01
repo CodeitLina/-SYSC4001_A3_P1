@@ -5,7 +5,7 @@
  * 
  */
 
-#include<interrupts_student1_student2.hpp>
+#include"interrupts_101297993_101302793.hpp"
 
 void FCFS(std::vector<PCB> &ready_queue) {
     std::sort( 
@@ -15,6 +15,16 @@ void FCFS(std::vector<PCB> &ready_queue) {
                     return (first.arrival_time > second.arrival_time); 
                 } 
             );
+}
+//going off above snippet, our EP:
+void EP(std::vector<PCB> &ready_queue) {
+    std::sort(
+        ready_queue.begin(),
+        ready_queue.end(),
+        [](const PCB &a, const PCB &b) {
+            return a.PID > b.PID; // bigger PID first, so smallest PID ends up at back()
+        }
+    );
 }
 
 std::tuple<std::string /* add std::string for bonus mark */ > run_simulation(std::vector<PCB> list_processes) {
@@ -63,14 +73,113 @@ std::tuple<std::string /* add std::string for bonus mark */ > run_simulation(std
 
         ///////////////////////MANAGE WAIT QUEUE/////////////////////////
         //This mainly involves keeping track of how long a process must remain in the ready queue
+        std::vector<PCB> still_waiting;
+        std::vector<PCB> finished_io;
+
+        for (auto &p : wait_queue) {
+            if (p.remaining_io_time > 0) {
+                p.remaining_io_time--;
+            }
+            if (p.remaining_io_time == 0) {
+                // I/O will be considered finished at the **end** of this ms.
+                finished_io.push_back(p);
+            } else {
+                still_waiting.push_back(p);
+            }
+        }
+        wait_queue.swap(still_waiting);
 
         /////////////////////////////////////////////////////////////////
 
         //////////////////////////SCHEDULER//////////////////////////////
-        FCFS(ready_queue); //example of FCFS is shown here
-        /////////////////////////////////////////////////////////////////
+        EP(ready_queue); //example of FCFS is shown here
+        ////////////////////////////////////////////////////////////////
+        if (running.PID == -1 && !ready_queue.empty()) {
+            // Sort processes by priority with smallest PID = highest priority at back()
+            EP(ready_queue);
 
+            // Pick from READY into RUNNING using helper
+            run_process(running, job_list, ready_queue, current_time);
+
+            //READY to RUNNING
+            execution_status += print_exec_status(current_time, running.PID, READY, RUNNING);
+        }
+
+        // 1ms of CPU for RUNNING
+        bool running_event_io = false;
+        bool running_event_terminate = false;
+
+        if (running.PID != -1) {
+            // consume 1 ms of CPU
+            if (running.remaining_time > 0) {
+                running.remaining_time--;
+            }
+
+            // I/O countdown only if process has I/O and still has CPU left
+            if (running.io_freq > 0 && running.remaining_time > 0) {
+                if (running.time_to_next_io > 0) {
+                    running.time_to_next_io--;
+                }
+                if (running.time_to_next_io == 0) {
+                    running_event_io = true;
+                }
+            }
+
+            // Check for termination
+            if (running.remaining_time == 0) {
+                running_event_terminate = true;
+            }
+        }
+
+        // end of this ms
+        current_time++;
+
+        //either I/O or TERMINATE
+        if (running.PID != -1) {
+            if (running_event_terminate) {
+                // RUNNING to TERMINATED
+                states old_state = running.state;
+                running.state = TERMINATED;
+
+                execution_status += print_exec_status(current_time, running.PID, old_state, TERMINATED);
+
+                free_memory(running);
+                sync_queue(job_list, running);
+                idle_CPU(running);
+            } else if (running_event_io) {
+                // RUNNING to WAITING
+                states old_state = running.state;
+                running.state = WAITING;
+
+                execution_status += print_exec_status(current_time, running.PID, old_state, WAITING);
+
+                running.remaining_io_time = running.io_duration;
+                running.time_to_next_io = running.io_freq;  // reset for next CPU burst
+
+                wait_queue.push_back(running);
+                sync_queue(job_list, running);
+                idle_CPU(running);
+            } else {
+                // Still RUNNING, sync
+                sync_queue(job_list, running);
+            }
+        }
+
+        // I/O completed: WAITING to READY 
+        for (auto &p : finished_io) {
+            states old_state = WAITING;
+            p.state = READY;
+
+            // When it returns to CPU again, we start a fresh I/O countdown
+            p.time_to_next_io = p.io_freq;
+
+            execution_status += print_exec_status(current_time, p.PID, old_state, READY);
+
+            ready_queue.push_back(p);
+            sync_queue(job_list, p);
+        }
     }
+
     
     //Close the output table
     execution_status += print_exec_footer();

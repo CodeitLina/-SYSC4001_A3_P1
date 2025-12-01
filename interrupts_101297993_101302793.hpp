@@ -65,6 +65,14 @@ struct PCB{
     enum states     state;
     unsigned int    io_freq;
     unsigned int    io_duration;
+
+    unsigned int    time_to_next_io; // countdown while RUNNING
+    unsigned int    remaining_io_time; // countdown while WAITING
+    unsigned int    completion_time; // for report calculations
+    int             first_run_time; // for report calculations
+    unsigned int    quantum_remaining; // for RR and EP+RR
+    int             priority; // not so imp, just to simplify lower value assign higher priority
+
 };
 
 //------------------------------------HELPER FUNCTIONS FOR THE SIMULATOR------------------------------
@@ -270,6 +278,11 @@ PCB add_process(std::vector<std::string> tokens) {
     process.partition_number = -1;
     process.state = NOT_ASSIGNED;
 
+    process.time_to_next_io   = (process.io_freq > 0) ? process.io_freq : 0;
+    process.remaining_io_time = 0;
+    process.quantum_remaining = 0;
+    process.priority = process.PID; // for EP,lower PID = higher priority
+
     return process;
 }
 
@@ -313,6 +326,36 @@ void idle_CPU(PCB &running) {
     running.size = 0;
     running.state = NOT_ASSIGNED;
     running.PID = -1;
+
+    running.time_to_next_io   = 0;
+    running.remaining_io_time = 0;
+    running.priority          = 0;
+    running.quantum_remaining = 0;
+}
+
+//Calculation: 
+std::string computing_metrics(std::vector<PCB> job_list, unsigned int total_time){
+    std::stringstream buffer;
+    int total_turnaround = 0;
+    int total_wait = 0;
+    int total_response = 0;
+    int n = job_list.size();
+    
+    for(const auto& process : job_list) { //add up to total, divide b num processes, then print
+        int turnaround = process.completion_time - process.arrival_time;
+        int wait = turnaround - process.processing_time;
+        int response = process.first_run_time - process.arrival_time;
+        total_turnaround += turnaround;
+        total_wait += wait;
+        total_response += response;
+    }
+    buffer << "\nCalculations: " << std::endl;
+    buffer << "Throughput: " << (double) n / total_time << std::endl;
+    buffer << "Average Turnaround Time: " << (double) total_turnaround / n << std::endl;
+    buffer << "Average Wait Time: " << (double) total_wait / n << std::endl;
+    buffer << "Average Response Time: " << (double) total_response / n << std::endl;
+
+    return buffer.str();
 }
 
 #endif

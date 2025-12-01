@@ -5,9 +5,9 @@
  * 
  */
 
-#include<interrupts_student1_student2.hpp>
+#include"interrupts_101297993_101302793.hpp"
 
-void FCFS(std::vector<PCB> &ready_queue) {
+void FCFS(std::vector<PCB> &ready_queue) { // RR is FCFS with time quantum so we wont add anything else
     std::sort( 
                 ready_queue.begin(),
                 ready_queue.end(),
@@ -37,6 +37,10 @@ std::tuple<std::string /* add std::string for bonus mark */ > run_simulation(std
     //make the output table (the header row)
     execution_status = print_exec_header();
 
+    unsigned int QUANTUM = 100;
+    int quantum_remaining = QUANTUM; //quantum remanining is qutaum - certain time passed
+                                        //so I created this variable to keep track of it, possible better implemnation 
+
     //Loop while till there are no ready or waiting processes.
     //This is the main reason I have job_list, you don't have to use it.
     while(!all_process_terminated(job_list) || job_list.empty()) {
@@ -63,13 +67,73 @@ std::tuple<std::string /* add std::string for bonus mark */ > run_simulation(std
 
         ///////////////////////MANAGE WAIT QUEUE/////////////////////////
         //This mainly involves keeping track of how long a process must remain in the ready queue
+        std::vector <PCB> p_to_remove; //processes to remove from wait queue after handling
+        for(auto &process : wait_queue) {
+            //If the I/O duration is complete, the process is ready 
+            if(process.io_duration + process.start_time <= current_time) { 
+                process.state = READY;
+                ready_queue.push_back(process); //add to ready queue
+                p_to_remove.push_back(process); //add to remove list
+                execution_status += print_exec_status(current_time, process.PID, WAITING, READY); //log the transition
+                sync_queue(job_list, process); //sync the job list
+            }
+        }
+
+        for(auto &process : p_to_remove) { //remove from wait queue
+            wait_queue.erase(
+                std::remove_if(wait_queue.begin(), wait_queue.end(),[&process](const PCB& p) { 
+                    return p.PID == process.PID; 
+                }),
+                wait_queue.end()
+            );
+        }
 
         /////////////////////////////////////////////////////////////////
 
         //////////////////////////SCHEDULER//////////////////////////////
         FCFS(ready_queue); //example of FCFS is shown here
+        //we can keep it FCFS bc RR is just FCFS with time quantum no difference 
         /////////////////////////////////////////////////////////////////
+        if(running.state == NOT_ASSIGNED && !ready_queue.empty()){
+            execution_status += print_exec_status(current_time, ready_queue.back().PID, READY, RUNNING);
+            run_process(running, job_list, ready_queue, current_time);
+            quantum_remaining = QUANTUM; //reset it if we are starting new process
+            if (running.first_run_time == -1) { 
+                running.first_run_time = current_time;
+                sync_queue(job_list, running);
+            }
+        }
+        //if the cpu is running, move the time forward and then see if it's complete or an I/O needs to happen
+        if (running.state == RUNNING) {
+            running.remaining_time -= 1; 
+            quantum_remaining -= 1;
+            //if we finished the task
+            if (running.remaining_time == 0) { 
+                execution_status += print_exec_status(current_time + 1, running.PID, RUNNING, TERMINATED);
+                running.completion_time = current_time + 1; 
+                terminate_process(running, job_list);
+                idle_CPU(running);
 
+                //if we need to do I/O
+            } else if (running.io_freq != 0 && (running.processing_time - running.remaining_time) % running.io_freq == 0) { 
+                execution_status += print_exec_status(current_time + 1, running.PID, RUNNING, WAITING);
+                running.state = WAITING;
+                running.start_time = current_time + 1; 
+                wait_queue.push_back(running);
+                sync_queue(job_list, running);
+                idle_CPU(running);
+                //otherwise if we used up our quantum
+            } else if (quantum_remaining == 0) {
+                //TIME QUANTUM EXPIRED: RUNNING to READY
+                execution_status += print_exec_status(current_time + 1, running.PID, RUNNING, READY);
+                running.state = READY;
+                ready_queue.push_back(running);
+                sync_queue(job_list, running); //sync the job list
+                idle_CPU(running);//set CPU to idle
+                quantum_remaining = QUANTUM; //reset quantum
+            }
+        }
+        current_time++;
     }
     
     //Close the output table
