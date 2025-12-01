@@ -1,0 +1,36 @@
++------------------------------------------------+
+|Time of Transition |PID | Old State | New State |
++------------------------------------------------+
+|                 0 |  1 |       NEW |     READY |
+|                 0 |  1 |     READY |   RUNNING |
+|                10 |  2 |       NEW |     READY |
+|                20 |  3 |       NEW |     READY |
+|               100 |  1 |   RUNNING |     READY |
+|               100 |  1 |     READY |   RUNNING |
+|               200 |  1 |   RUNNING |TERMINATED |
+|               200 |  2 |     READY |   RUNNING |
+|               230 |  2 |   RUNNING |TERMINATED |
+|               230 |  3 |     READY |   RUNNING |
+|               260 |  3 |   RUNNING |TERMINATED |
++------------------------------------------------+
+
+Calculations: 
+Throughput: 0.0115385
+Average Turnaround Time: 220
+Average Wait Time: 133.333
+Average Response Time: -9
+
+MEMORY STATUS @ time 260 ms
+-----------------------------------------
+Partition 1 (40 MB): FREE
+Partition 2 (25 MB): FREE
+Partition 3 (15 MB): FREE
+Partition 4 (10 MB): FREE
+Partition 5 (8 MB): FREE
+Partition 6 (2 MB): FREE
+
+Total memory used: 0 MB
+Total memory free: 100 MB
+Usable free memory: 100 MB
+-----------------------------------------
+

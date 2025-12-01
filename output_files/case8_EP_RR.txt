@@ -1,0 +1,106 @@
++------------------------------------------------+
+|Time of Transition |PID | Old State | New State |
++------------------------------------------------+
+|                 0 | 30 |       NEW |     READY |
+|                 0 | 30 |     READY |   RUNNING |
+|                 4 | 30 |   RUNNING |   WAITING |
+|                 5 | 31 |       NEW |     READY |
+|                 5 | 31 |     READY |   RUNNING |
+|                 7 | 30 |   WAITING |     READY |
+|                10 | 31 |   RUNNING |   WAITING |
+|                10 | 32 |       NEW |     READY |
+|                10 | 30 |     READY |   RUNNING |
+|                13 | 31 |   WAITING |     READY |
+|                14 | 30 |   RUNNING |   WAITING |
+|                14 | 31 |     READY |   RUNNING |
+|                17 | 30 |   WAITING |     READY |
+|                19 | 31 |   RUNNING |   WAITING |
+|                19 | 30 |     READY |   RUNNING |
+|                22 | 31 |   WAITING |     READY |
+|                23 | 30 |   RUNNING |   WAITING |
+|                23 | 31 |     READY |   RUNNING |
+|                26 | 30 |   WAITING |     READY |
+|                28 | 31 |   RUNNING |   WAITING |
+|                28 | 30 |     READY |   RUNNING |
+|                31 | 31 |   WAITING |     READY |
+|                32 | 30 |   RUNNING |   WAITING |
+|                32 | 31 |     READY |   RUNNING |
+|                35 | 30 |   WAITING |     READY |
+|                37 | 31 |   RUNNING |   WAITING |
+|                37 | 30 |     READY |   RUNNING |
+|                40 | 31 |   WAITING |     READY |
+|                41 | 30 |   RUNNING |   WAITING |
+|                41 | 31 |     READY |   RUNNING |
+|                44 | 30 |   WAITING |     READY |
+|                46 | 31 |   RUNNING |   WAITING |
+|                46 | 30 |     READY |   RUNNING |
+|                49 | 31 |   WAITING |     READY |
+|                50 | 30 |   RUNNING |   WAITING |
+|                50 | 31 |     READY |   RUNNING |
+|                53 | 30 |   WAITING |     READY |
+|                55 | 31 |   RUNNING |   WAITING |
+|                55 | 30 |     READY |   RUNNING |
+|                58 | 31 |   WAITING |     READY |
+|                59 | 30 |   RUNNING |   WAITING |
+|                59 | 31 |     READY |   RUNNING |
+|                62 | 30 |   WAITING |     READY |
+|                64 | 31 |   RUNNING |TERMINATED |
+|                64 | 30 |     READY |   RUNNING |
+|                68 | 30 |   RUNNING |   WAITING |
+|                68 | 32 |     READY |   RUNNING |
+|                71 | 32 |   RUNNING |   WAITING |
+|                71 | 30 |   WAITING |     READY |
+|                71 | 30 |     READY |   RUNNING |
+|                73 | 32 |   WAITING |     READY |
+|                75 | 30 |   RUNNING |   WAITING |
+|                75 | 32 |     READY |   RUNNING |
+|                78 | 32 |   RUNNING |   WAITING |
+|                78 | 30 |   WAITING |     READY |
+|                78 | 30 |     READY |   RUNNING |
+|                80 | 32 |   WAITING |     READY |
+|                82 | 30 |   RUNNING |TERMINATED |
+|                82 | 32 |     READY |   RUNNING |
+|                85 | 32 |   RUNNING |   WAITING |
+|                87 | 32 |   WAITING |     READY |
+|                87 | 32 |     READY |   RUNNING |
+|                90 | 32 |   RUNNING |   WAITING |
+|                92 | 32 |   WAITING |     READY |
+|                92 | 32 |     READY |   RUNNING |
+|                95 | 32 |   RUNNING |   WAITING |
+|                97 | 32 |   WAITING |     READY |
+|                97 | 32 |     READY |   RUNNING |
+|               100 | 32 |   RUNNING |   WAITING |
+|               102 | 32 |   WAITING |     READY |
+|               102 | 32 |     READY |   RUNNING |
+|               105 | 32 |   RUNNING |   WAITING |
+|               107 | 32 |   WAITING |     READY |
+|               107 | 32 |     READY |   RUNNING |
+|               110 | 32 |   RUNNING |   WAITING |
+|               112 | 32 |   WAITING |     READY |
+|               112 | 32 |     READY |   RUNNING |
+|               115 | 32 |   RUNNING |   WAITING |
+|               117 | 32 |   WAITING |     READY |
+|               117 | 32 |     READY |   RUNNING |
+|               120 | 32 |   RUNNING |TERMINATED |
++------------------------------------------------+
+
+Calculations: 
+Throughput: 0.025
+Average Turnaround Time: 83.6667
+Average Wait Time: 48.6667
+Average Response Time: -4
+
+MEMORY STATUS @ time 120 ms
+-----------------------------------------
+Partition 1 (40 MB): FREE
+Partition 2 (25 MB): FREE
+Partition 3 (15 MB): FREE
+Partition 4 (10 MB): FREE
+Partition 5 (8 MB): FREE
+Partition 6 (2 MB): FREE
+
+Total memory used: 0 MB
+Total memory free: 100 MB
+Usable free memory: 100 MB
+-----------------------------------------
+
